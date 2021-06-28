@@ -1,4 +1,4 @@
-.PHONY: clean clean-test clean-pyc clean-build docs help
+.PHONY: clean clean-test clean-pyc clean-build docs help clean-cache clean-docs
 .DEFAULT_GOAL := help
 
 define BROWSER_PYSCRIPT
@@ -26,7 +26,13 @@ BROWSER := python -c "$$BROWSER_PYSCRIPT"
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
-clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
+clean: clean-cache clean-build clean-pyc clean-test clean-docs ## remove all build, test, coverage and Python artifacts
+
+clean-cache:
+	rm -fr .work/*
+
+clean-docs:
+	$(MAKE) -C docs clean
 
 clean-build: ## remove build artifacts
 	rm -fr build/
@@ -68,7 +74,6 @@ coverage: ## check code coverage quickly with the default Python
 {%- endif %}
 	coverage report -m
 	coverage html
-	$(BROWSER) htmlcov/index.html
 
 docs: ## generate Sphinx HTML documentation, including API docs
 	rm -f docs/{{ cookiecutter.project_slug }}.rst
@@ -76,7 +81,6 @@ docs: ## generate Sphinx HTML documentation, including API docs
 	sphinx-apidoc -o docs/ {{ cookiecutter.project_slug }}
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
-	$(BROWSER) docs/_build/html/index.html
 
 servedocs: docs ## compile the docs watching for changes
 	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
@@ -91,3 +95,7 @@ dist: clean ## builds source and wheel package
 
 install: clean ## install the package to the active Python's site-packages
 	python setup.py install
+
+install-dev: clean
+	pip install -r requirements_dev.txt -r requirements.txt
+	pip install --editable .
